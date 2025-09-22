@@ -24,19 +24,11 @@ def fermat(N: int, k: int) -> bool:
     if N <= 1:
         return True
     for i in range(k):
-        if not fermat_once(N):
+        a = random.randint(1, N-1)
+        if not (mod_exp(a, N-1, N) == 1):
             return False
-
+        
     return True
-
-def fermat_once(N: int) -> bool:
-    # pick random base 1 > a < N-1
-    a = random.randint(1, N-1)
-    if(mod_exp(a, N-1, N) == 1):
-        return True
-    else:
-        return False
-
 
 def miller_rabin(N: int, k: int) -> bool:
     """
