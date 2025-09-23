@@ -17,15 +17,15 @@ def mod_exp(x: int, y: int, N: int) -> int:
     if y == 0:                      #O(1) - comparison is constant
         return 1                    #O(1) - returning is constant
 
-    z = mod_exp(x, floor(y/2), N)   #O(n/2) - depends on how many bits input is, halved with every call
+    z = mod_exp(x, y//2, N)         #O(n) - bit shifting means we lose one bit per shift, so this happens n times
 
     if (y % 2 == 0):                #O(1) - comparison and mod are constant
-        return ((z * z) % N)        #O(1) - returning is constant
+        return ((z * z) % N)        #O(n^2) - n^2 time complexity for multiplication
     else:
-        return ((x * z * z) % N)    #O(1) - returning is constant
+        return ((x * z * z) % N)    #O(n^2) - n^2 time complexity for multiplication
 ```
 
-The largest operation is the recursive call to get z. This results in an overall time complexity of **O(n/2)**.
+The largest operations are the recursive call to get z and the multiplication in the return statement. This results in an overall time complexity of **O(n^3)**.
 
 #### fermat
 
@@ -37,14 +37,14 @@ def fermat(N: int, k: int) -> bool:
     if N <= 1:                              #O(1) - comparison is constant
         return True                         #O(1) - returning is constant
     for i in range(k):                      #O(k) - loops k times
-        a = random.randint(1, N-1)          #O(1) - generating randInt is constant
-        if not (mod_exp(a, N-1, N) == 1):   #O(n/2) - mod_exp time complexity dominates constant comparisons
+        a = random.randint(1, N-1)          #O(<n) - definitely less than n
+        if not (mod_exp(a, N-1, N) == 1):   #O(n^3) - mod_exp time complexity dominates constant comparisons
             return False                    #O(1) - returning is constant
 
     return True                             #O(1) - returning is constant
 ```
 
-The largest operation is the loop k times calling mod_exp, which turns this function into a time complexity of **O(k \* n/2)**.
+The largest operation is the loop k times calling mod_exp, which turns this function into a time complexity of **O(k \* n^3)**.
 
 #### generate_large_prime
 
@@ -52,13 +52,13 @@ The largest operation is the loop k times calling mod_exp, which turns this func
 def generate_large_prime(n_bits: int) -> int:
     """Generate a random prime number with the specified bit length"""
 
-    while(True):                        #O(n) - worst case, ...
-        N = random.getrandbits(n_bits)  #O(1) - generating random number is constant
-        if (fermat(N, 20)):             #O(n/2) - n/2 dominates k=20
+    while(True):                        #O(n) - "on average it will halt within O(n) rounds" - Section 1.3.1, Algorithms
+        N = random.getrandbits(n_bits)  #O(n) - generating random number is O(n) for bit length n
+        if (fermat(N, 20)):             #O(n^3) - n^3 dominates k=20
             return N                    #O(1) - returning is constant
 ```
 
-The largest operation is the loop n times calling fermat, which turns this function into a time complexity of **O(n^2)**.
+The largest operation is the loop n times calling fermat, which turns this function into a time complexity of **O(n^4)**.
 
 #### Space
 
@@ -69,7 +69,7 @@ def mod_exp(x: int, y: int, N: int) -> int:
     if y == 0:
         return 1
 
-    z = mod_exp(x, floor(y/2), N)   #O(n/2) - call stack
+    z = mod_exp(x, y//2, N)   #O(n) - call stack and then O(n) for storing z
 
     if (y % 2 == 0):
         return ((z * z) % N)
@@ -77,7 +77,7 @@ def mod_exp(x: int, y: int, N: int) -> int:
         return ((x * z * z) % N)
 ```
 
-The largest space operation is the recursive call to get z. This results in an overall space complexity of **O(n/2)**.
+We are not counting the input for the space complexity. The largest space operation is the recursive call to get z. This results in an overall space complexity of **O(n^2)**.
 
 #### fermat
 
@@ -86,17 +86,17 @@ def fermat(N: int, k: int) -> bool:
     """
     Returns True if N is prime
     """
-    if N <= 1:                              #O(1) - comparison is constant
-        return True                         #O(1) - returning is constant
-    for i in range(k):                      #O(k) - loops k times
-        a = random.randint(1, N-1)          #O(1) - generating randInt is constant
-        if not (mod_exp(a, N-1, N) == 1):   #O(n/2) - mod_exp time complexity dominates constant comparisons
-            return False                    #O(1) - returning is constant
+    if N <= 1:
+        return True
+    for i in range(k):                      #O(k) - k small compared to N, a constant
+        a = random.randint(1, N-1)          #O(n) - stores a up to N
+        if not (mod_exp(a, N-1, N) == 1):   #O(n^2) - mod_exp space complexity
+            return False
 
-    return True                             #O(1) - returning is constant
+    return True
 ```
 
-The largest operation is the loop k times calling mod_exp, which turns this function into a time complexity of **O(k \* n/2)**.
+We are not counting the input for the space complexity. The largest operation is the loop k times calling mod_exp, which turns this function into a space complexity of **O(n^2)**.
 
 #### generate_large_prime
 
@@ -104,28 +104,28 @@ The largest operation is the loop k times calling mod_exp, which turns this func
 def generate_large_prime(n_bits: int) -> int:
     """Generate a random prime number with the specified bit length"""
 
-    while(True):                        #O(n) - worst case, ...
-        N = random.getrandbits(n_bits)  #O(1) - generating random number is constant
+    while(True):                        #O(n) - on average, call stack is n deep (Section 1.3.1, Algorithms)
+        N = random.getrandbits(n_bits)  #O(n) - generating random number is constant
         if (fermat(N, 20)):             #O(n/2) - n/2 dominates k=20
             return N                    #O(1) - returning is constant
 ```
 
-The largest operation is the loop n times calling fermat, which turns this function into a time complexity of **O(n^2)**.
+We are not counting the input for space. The largest operation is the loop n times calling fermat, which turns this function into a time complexity of **O(n^2)**.
 
 ### Empirical Data
 
 | N    | time (ms) |
 | ---- | --------- |
-| 64   | 0.10383   |
-| 128  |           |
-| 256  |           |
-| 512  |           |
+| 64   | 0.02272   |
+| 128  | 0.00499   |
+| 256  | 0.03301   |
+| 512  | 0.55264   |
 | 1024 |           |
 | 2048 |           |
 
 ### Comparison of Theoretical and Empirical Results
 
-- Theoretical order of growth: _copy from section above_
+- Theoretical order of growth: O(n^4)
 - Measured constant of proportionality for theoretical order:
 - Empirical order of growth (if different from theoretical):
 - Measured constant of proportionality for empirical order:

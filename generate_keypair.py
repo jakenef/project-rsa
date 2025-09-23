@@ -1,6 +1,8 @@
 import sys
 from time import time
 
+from prime_number_generation import generate_large_prime
+
 # When trying to find a relatively prime e for (p-1) * (q-1)
 # use this list of 25 primes
 # If none of these work, throw an exception (and let the instructors know!)
@@ -41,6 +43,32 @@ def generate_key_pairs(n_bits) -> tuple[int, int, int]:
     Computes e and d such that e*d = 1 mod (p-1)(q-1)
     Return N, e, and d
     """
+
+    p = generate_large_prime(n_bits)
+    q = generate_large_prime(n_bits)
+
+    N = p * q
+
+    phi = (p - 1) * (q - 1)
+    e = 3
+
+    x, y, d_gcd = extended_euclid(phi, e)
+
+    if d_gcd != 1:
+        print("d_gcd wasn't 1! trying with e=5")
+        e = 5
+        x, y, d_gcd = extended_euclid(phi, e)
+
+    d = y % phi 
+
+    return (N, e, d)
+
+def extended_euclid(a, b) -> tuple[int, int, int]:
+    if b == 0:
+        return (1, 0, a)
+    x, y, d = extended_euclid(b, a % b)
+    q = a // b
+    return (y, x - q * y, d)
 
 
 def main(n_bits: int, filename_stem: str):

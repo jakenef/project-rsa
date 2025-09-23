@@ -9,7 +9,7 @@ def mod_exp(x: int, y: int, N: int) -> int:
     if y == 0:
         return 1
     
-    z = mod_exp(x, floor(y/2), N)
+    z = mod_exp(x, (y//2), N)
 
     if (y % 2 == 0):
         return ((z * z) % N)
