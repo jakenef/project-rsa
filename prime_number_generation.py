@@ -2,6 +2,7 @@ from math import floor
 import sys
 from time import time
 import random
+sys.setrecursionlimit(4000)
 
 
 # You will need to implement this function and change the return value.

@@ -47,16 +47,18 @@ def generate_key_pairs(n_bits) -> tuple[int, int, int]:
     p = generate_large_prime(n_bits)
     q = generate_large_prime(n_bits)
 
+    e_counter = 0
+
     N = p * q
 
     phi = (p - 1) * (q - 1)
-    e = 3
+    e = primes[e_counter]
 
     x, y, d_gcd = extended_euclid(phi, e)
 
-    if d_gcd != 1:
-        print("d_gcd wasn't 1! trying with e=5")
-        e = 5
+    while (d_gcd != 1):
+        e_counter += 1
+        e = primes[e_counter]
         x, y, d_gcd = extended_euclid(phi, e)
 
     d = y % phi 
