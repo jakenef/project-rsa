@@ -305,7 +305,7 @@ def main(key_file: Path, message_file: Path, output_file: Path):
     output_file.write_bytes(b''.join(result).rstrip(b'\x00')) #O(m) - joining and writing output
 ```
 
-The rest of the file is inconsequential. The dominant operation is mod*exp inside the loop. Since it's called O(m/n) times with a complexity of O(n^3) each time, the overall time complexity for decryption is O((m/n) * n^3) = \*\*O(m\*n^2)\*\*. For encrypting, when the exponent is a known and usually small number, time complexity is **O(m\*n)**.
+The rest of the file is inconsequential. The dominant operation is mod*exp inside the loop. Since it's called O(m/n) times with a complexity of O(n^3) each time, the overall time complexity for decryption is O((m/n) * n^3) = **O(m\*n^2)**. For encrypting, when the exponent is a known and usually small number, time complexity is **O(m\*n)**.
 
 #### Space
 
@@ -425,4 +425,8 @@ This shows why Miller-Rabin is better for RSA. With k=20 (what we use in our pri
 
 ## Project Review
 
-_Fill me in_
+For my project review, I met with Brandon Monson and Porter Schollenberger to compare our code and results. We talked for about 20 minutes and focused on the baseline and core tiers. Each of us had different implementations for functions like modular exponentiation, primality testing, and key generation, so we discussed how our choices affected readability and runtime.
+
+When we compared theoretical analysis, it was clear that all three of us came up with different time and space complexities for the main algorithms. This led to a good discussion about how to justify bounds and where our reasoning diverged. We also compared empirical results and the constants of proportionality we measured. Our runtimes were close, but we each interpreted the scaling behavior differently.
+
+Finally, we shared strategies for the stretch goals. Brandon focused on making mod_exp testing faster, and Porter was confused about the encrypt-decrypt step. I learned clearer ways to explain complexity results and saw how different design choices can still lead to working implementations even if the analysis is not the same.
