@@ -391,11 +391,36 @@ I encrypted and decrypted a personalized message with Patrick Blood. We both use
 
 ### Design Experience
 
-_Fill me in_
+On Sep. 19th, I met with Brandon Monson to design miller_rabin(N, k). We confirmed inputs N and k, the split N−1 = 2^t \* u with u odd, and using random bases a in [2, N−2]. mod_exp(a, u, N) seeds the witness test, with early accept if x is 1 or N−1, else square up to t−1 times to look for N−1. If none found, composite; otherwise continue. We kept guards for small N and even N, and noted that k trades runtime for error probability. We also discussed using fixed bases for deterministic checks on 64-bit N, and how this slots into generate_large_prime by repeating until a candidate passes.
 
 ### Discussion: Probabilistic Natures of Fermat and Miller Rabin
 
-_Fill me in_
+I ran tests on Carmichael numbers (special composite numbers like 561, 1105, and 6601) that are known to fool Fermat's test. These numbers satisfy a^(N-1) ≡ 1 (mod N) for bases coprime to N, which is exactly what Fermat checks for.
+
+#### Fermat Test Results
+
+When testing the Carmichael number 561 with 100 trials:
+
+- With k=1: Fermat wrongly said "prime" 50% of the time
+- With k=5: Still wrong 9% of the time
+- With k=9: Still wrong 2% of the time
+
+For the larger number 6601 with 1000 trials:
+
+- With k=1: Wrong 79.5% of the time
+- With k=10: Still wrong 9.9% of the time
+
+The textbook mentions between Figures 1.7 and 1.8 that for regular composite numbers, Fermat's error probability is at most (1/2)^k. My tests show that for Carmichael numbers, the probability follows roughly (3/4)^k instead, making Fermat's test much less reliable.
+
+#### Miller-Rabin Results
+
+Miller-Rabin did way better on the same numbers:
+
+- For all three Carmichael numbers with k=1: Wrong only 1-3.5% of the time
+
+The textbook notes on page 28 that Miller-Rabin has a maximum error rate of (1/4)^k for any composite number. My tests confirm this - even with k=1, Miller-Rabin correctly identified Carmichael numbers as composite over 96% of the time.
+
+This shows why Miller-Rabin is better for RSA. With k=20 (what we use in our prime generation), the chance of a false positive is astronomically small, whereas Fermat would need much larger k values to achieve similar confidence.
 
 ## Project Review
 
