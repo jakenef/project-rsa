@@ -130,9 +130,10 @@ We are not counting the input for space. The largest operation is the loop n tim
 - Empirical order of growth (if different from theoretical): **O(n^3.7)**
 - Measured constant of proportionality for empirical order: **1.0020532362591403e-07**
 
+![theoretical_gen](theoretical_generation.png)
 ![generate_large_primes](generate_large_primes.png)
 
-_Fill me in_
+The theoretical order of growth is significantly larger than the empirical order of growth. This is possibly because the multiplication and division for small numbers might not be the assumed O(n^2), and could be more efficient like O(1) for really small numbers and O(n) for others.
 
 ## Core
 
@@ -150,7 +151,7 @@ On Sep. 19th, I met with Brandon Monson to discuss the design of generate_key_pa
 def extended_euclid(a, b) -> tuple[int, int, int]:
     if b == 0:
         return (1, 0, a)
-    x, y, d = extended_euclid(b, a % b) # O(n)? how likely is b going to be 0?
+    x, y, d = extended_euclid(b, a % b) # O(n) how likely is b going to be 0?
     q = a // b                          # O(n^2) for division when not by 2
     return (y, x - q * y, d)            # O(n^2) for multiplication
 ```
@@ -181,7 +182,7 @@ def generate_key_pairs(n_bits) -> tuple[int, int, int]:
 
     x, y, d_gcd = extended_euclid(phi, e)       # O(n^3)
 
-    while (d_gcd != 1):                         # O(n) whats the chance this doesn't work?
+    while (d_gcd != 1):                         # O(1)
         e_counter += 1
         e = primes[e_counter]
         x, y, d_gcd = extended_euclid(phi, e)   # O(n^3)
@@ -195,45 +196,144 @@ The largest operations are the calls to generate large primes and to get x, y, a
 
 #### Space
 
-_Fill me in_
+#### extended_euclid
+
+```py
+def extended_euclid(a, b) -> tuple[int, int, int]:
+    if b == 0:
+        return (1, 0, a)
+    x, y, d = extended_euclid(b, a % b)  #O(n) - recursive call stack depth is logarithmic
+    q = a // b                           #O(n) - storing q requires n bits
+    return (y, x - q * y, d)             #O(n) - storing return values
+```
+
+We are not counting the input for the space complexity. The largest space operation is the recursive call stack which has a depth of O(log n) based on Euclidean algorithm properties, and each stack frame stores O(n) bits. This results in an overall space complexity of **O(n^2)**.
+
+#### generate_key_pairs
+
+```py
+def generate_key_pairs(n_bits) -> tuple[int, int, int]:
+    """
+    Generate RSA public and private key pairs.
+    Randomly creates a p and q (two large n-bit primes)
+    Computes N = p*q
+    Computes e and d such that e*d = 1 mod (p-1)(q-1)
+    Return N, e, and d
+    """
+
+    p = generate_large_prime(n_bits)            #O(n^2) - space from generate_large_prime
+    q = generate_large_prime(n_bits)            #O(n^2) - space from generate_large_prime
+
+    e_counter = 0
+
+    N = p * q                                   #O(n) - storing N requires 2n bits
+    phi = (p - 1) * (q - 1)                     #O(n) - storing phi requires 2n bits
+    e = primes[e_counter]                       #O(1) - e is small
+
+    x, y, d_gcd = extended_euclid(phi, e)       #O(n^2) - from extended_euclid
+
+    while (d_gcd != 1):                         #O(1) - loop iterations typically very few
+        e_counter += 1
+        e = primes[e_counter]                   #O(1) - e is small
+        x, y, d_gcd = extended_euclid(phi, e)   #O(n^2) - from extended_euclid
+
+    d = y % phi                                 #O(n) - storing d requires up to 2n bits
+
+    return (N, e, d)                            #O(n) - returning three large integers
+```
+
+We are not counting the input for the space complexity. The largest space operations are storing the large integers N, phi, and d (each about 2n bits), and the space used by extended_euclid. This results in an overall space complexity of **O(n^2)**.
 
 ### Empirical Data
 
-| N    | time (ms)  |
-| ---- | ---------- |
-| 64   | 2.15869    |
-| 128  | 9.20548    |
-| 256  | 76.91126   |
-| 512  | 1145.24369 |
-| 1024 | 8262.48736 |
-| 2048 |            |
+| N    | time (ms)    |
+| ---- | ------------ |
+| 64   | 5.43523      |
+| 128  | 16.20483     |
+| 256  | 73.86088     |
+| 512  | 530.94411    |
+| 1024 | 26655.8888   |
+| 2048 | 167797.19567 |
 
 ### Comparison of Theoretical and Empirical Results
 
-- Theoretical order of growth: _copy from section above_
-- Measured constant of proportionality for theoretical order:
-- Empirical order of growth (if different from theoretical):
-- Measured constant of proportionality for empirical order:
+- Theoretical order of growth: **O(n^4)**
+- Measured constant of proportionality for theoretical order: **2.381451636199472e-08**
+- Empirical order of growth (if different from theoretical): **O(n^3.82)**
+- Measured constant of proportionality for empirical order: **6.740673680127171e-08**
 
-![img](img.png)
+![img](theoretical_keypair.png)
+![img](keypair.png)
 
-_Fill me in_
+The theoretical order of growth is slightly larger than the empirical order of growth. This is possibly because the multiplication and division for small numbers might not be the assumed O(n^2), and could be more efficient like O(1) for really small numbers and O(n) for others.
 
 ## Stretch 1
 
 ### Design Experience
 
-_Fill me in_
+For stretch 1, I met with Patrick Blood to plan our design. We decided to generate keys with generate_key_pairs, which uses two large primes to build N, computes φ, and finds e and d with extended_euclid. The public key is used for encryption and the private key for decryption. Our main tools are mod_exp for modular exponentiation, Fermat for primality testing, and our prime and key utilities. To measure performance, we timed encryption and decryption on 1Nephi.txt, recorded results, and plotted them to compare with the expected logarithmic complexity, estimating a proportionality constant from runtimes. We also exchanged encrypted files with each other using our public keys, successfully decrypted them, and noted small challenges like aligning file formats.
 
 ### Theoretical Analysis - Encrypt and Decrypt
 
 #### Time
 
-_Fill me in_
+!! need help from TA here, r we discussing main or what? and do we need two, one for encrypting and one for decrypting?
+
+#### main (encrypt_decrypt_files.py)
+
+```py
+def main(key_file: Path, message_file: Path, output_file: Path):
+    """
+    Encrypt or decrypt `message_file` and write the result in `output_file`
+    """
+
+    n_bytes, N, exponent = read_key(key_file)                #O(n) - reading key file
+
+    input_bytes = message_file.read_bytes()                  #O(m) - where m is file size in bits
+
+    start = time()                                           #O(1) - constant time operation
+
+    result = []                                              #O(1) - initialization
+    for chunk in stream_chunks(input_bytes, n_bytes):        #O(m/n) - iterate through chunks of size n
+        encrypted_chunk = mod_exp(chunk, exponent, N)        #O(n^3) - mod_exp complexity
+        encrypted_bytes = to_bytes(encrypted_chunk, n_bytes) #O(n) - converting int to bytes
+        result.append(encrypted_bytes)                       #O(1) - amortized constant time
+
+    print(f'{time() - start} seconds elapsed')               #O(1) - constant time operation
+
+    output_file.write_bytes(b''.join(result).rstrip(b'\x00')) #O(m) - joining and writing output
+```
+
+The dominant operation is mod*exp inside the loop. Since it's called O(m/n) times with a complexity of O(n^3) each time, the overall time complexity is O((m/n) * n^3) = \*\*O(m \_ n^2)\*\*.
 
 #### Space
 
-_Fill me in_
+#### main (encrypt_decrypt_files.py)
+
+```py
+def main(key_file: Path, message_file: Path, output_file: Path):
+    """
+    Encrypt or decrypt `message_file` and write the result in `output_file`
+    """
+
+    n_bytes, N, exponent = read_key(key_file)                #O(n) - storing key values, N is n bits
+
+    input_bytes = message_file.read_bytes()                  #O(m) - storing entire file in memory
+
+    start = time()                                           #O(1) - constant space
+
+    result = []                                              #O(m) - will eventually hold all output
+    for chunk in stream_chunks(input_bytes, n_bytes):        #O(n) - each chunk is n bits
+        encrypted_chunk = mod_exp(chunk, exponent, N)        #O(n^2) - space from mod_exp function
+        encrypted_bytes = to_bytes(encrypted_chunk, n_bytes) #O(n) - storing converted bytes
+        result.append(encrypted_bytes)                       #(grows to O(m) over all iterations)
+
+    print(f'{time() - start} seconds elapsed')               #O(1) - constant space
+
+    output_file.write_bytes(b''.join(result).rstrip(b'\x00')) #O(m) - joining creates new string
+```
+
+Since we're processing the entire message and storing both input and output in memory, the overall space complexity is **O(m + n²)**.
 
 ### Empirical Data
 
@@ -241,30 +341,30 @@ _Fill me in_
 
 | N    | time (ms) |
 | ---- | --------- |
-| 64   |           |
-| 128  |           |
-| 256  |           |
-| 512  |           |
-| 1024 |           |
-| 2048 |           |
+| 64   | 13.37600  |
+| 128  | 9.49025   |
+| 256  | 8.48103   |
+| 512  | 16.37793  |
+| 1024 | 28.74231  |
+| 2048 | 34.93714  |
 
 #### Decryption
 
-| N    | time (ms) |
-| ---- | --------- |
-| 64   |           |
-| 128  |           |
-| 256  |           |
-| 512  |           |
-| 1024 |           |
-| 2048 |           |
+| N    | time (ms)   |
+| ---- | ----------- |
+| 64   | 395.66207   |
+| 128  | 894.23227   |
+| 256  | 2713.40394  |
+| 512  | 8215.32679  |
+| 1024 | 29534.30200 |
+| 2048 | 99064.95285 |
 
 ### Comparison of Theoretical and Empirical Results
 
 #### Encryption
 
-- Theoretical order of growth: _copy from section above_
-- Measured constant of proportionality for theoretical order:
+- Theoretical order of growth: **O(n^3)**
+- Measured constant of proportionality for theoretical order: **7.519007420569323e-09**
 - Empirical order of growth (if different from theoretical):
 - Measured constant of proportionality for empirical order:
 
@@ -285,7 +385,7 @@ _Fill me in_
 
 ### Encrypting and Decrypting With A Classmate
 
-_Fill me in_
+I encrypted and decrypted a personalized message with Patrick Blood. We both used 512-bit public and private keys, and his message was semi-long, with probably around 100 words in it. Mine was shorter, with 10 words. It was neat to see the jumbled encrypted ASCII turn back into the original message. Originally, Patrick's decryption of my message didn't work, but he debugged his program and got it to work without too much trouble. Once that was cleared up, our encryption and decryption was completely successful.
 
 ## Stretch 2
 
