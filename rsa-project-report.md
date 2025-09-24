@@ -295,7 +295,8 @@ def main(key_file: Path, message_file: Path, output_file: Path):
 
     result = []                                              #O(1) - initialization
     for chunk in stream_chunks(input_bytes, n_bytes):        #O(m/n) - iterate through chunks of size n
-        encrypted_chunk = mod_exp(chunk, exponent, N)        #O(n^3) - mod_exp complexity
+        encrypted_chunk = mod_exp(chunk, exponent, N)        #O(n^3) - mod_exp complexity when decrypting, but when encrypting
+                                                             # basically constant recursion so mod_exp really is more like O(n^2)
         encrypted_bytes = to_bytes(encrypted_chunk, n_bytes) #O(n) - converting int to bytes
         result.append(encrypted_bytes)                       #O(1) - amortized constant time
 
@@ -304,7 +305,7 @@ def main(key_file: Path, message_file: Path, output_file: Path):
     output_file.write_bytes(b''.join(result).rstrip(b'\x00')) #O(m) - joining and writing output
 ```
 
-The dominant operation is mod*exp inside the loop. Since it's called O(m/n) times with a complexity of O(n^3) each time, the overall time complexity is O((m/n) * n^3) = \*\*O(m \_ n^2)\*\*.
+The rest of the file is inconsequential. The dominant operation is mod*exp inside the loop. Since it's called O(m/n) times with a complexity of O(n^3) each time, the overall time complexity for decryption is O((m/n) * n^3) = \*\*O(m\*n^2)\*\*. For encrypting, when the exponent is a known and usually small number, time complexity is **O(m\*n)**.
 
 #### Space
 
@@ -363,25 +364,25 @@ Since we're processing the entire message and storing both input and output in m
 
 #### Encryption
 
-- Theoretical order of growth: **O(n^3)**
-- Measured constant of proportionality for theoretical order: **7.519007420569323e-09**
-- Empirical order of growth (if different from theoretical):
-- Measured constant of proportionality for empirical order:
+- Theoretical order of growth: **O(m\*n)** because we use the same message m for all tests, m becomes insignificant. m is 1045360 bits.
+- Measured constant of proportionality for theoretical order: **0.03687751171875**
+- Empirical order of growth (if different from theoretical): **N/A**
+- Measured constant of proportionality for empirical order: **N/A**
 
-![img](img.png)
+![encryptTheoretcial](theoreticalEncrypt.png)
 
-_Fill me in_
+The theoretical order of growth is slightly larger than the empirical order of growth. This is possibly because the multiplication and division for small numbers might not be the assumed O(n^2), and could be more efficient like O(1) for really small numbers and O(n) for others. This causes the observed times to be falling off and not quite keeping up with the theoretical order of growth towards the end.
 
 #### Decryption
 
-- Theoretical order of growth: _copy from section above_
-- Measured constant of proportionality for theoretical order:
-- Empirical order of growth (if different from theoretical):
-- Measured constant of proportionality for empirical order:
+- Theoretical order of growth: **O(m\*n^2)** because we use the same message m for all tests, m becomes insignificant. m is 1045360 bits.
+- Measured constant of proportionality for theoretical order: **0.03582137597894668**
+- Empirical order of growth (if different from theoretical): **N/A**
+- Measured constant of proportionality for empirical order: **N/A**
 
-![img](img.png)
+![decryptTheoretical](decryptTheoretical.png)
 
-_Fill me in_
+The theoretical and empirical orders of growth are very similar and almost match up perfectly for decryption.
 
 ### Encrypting and Decrypting With A Classmate
 
